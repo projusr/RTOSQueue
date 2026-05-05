@@ -1,11 +1,27 @@
-<<<<<<< HEAD
+
 # RTOS Project
 
 RTOS Queue
 
 
 
-=======
 # RTOSQueue
 Project  creating and scheduling tasks .Using Queues for synchronisation.Target Embedded boards
->>>>>>> aa5e723b5ed739282bbb71639f231083de0227fb
+
+
+Target
+NXP Board
+
+Peripherals
+LED ,BUtton
+
+
+Feature
+Button Signal generated LED Control
+
+
+
+IMplementation
+Task oriented Functional implementation
+Improved efficiency by 30%  using synchronization resources.
+Less Latency.
