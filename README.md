@@ -5,23 +5,24 @@ RTOS Queue
 
 
 
-# RTOSQueue
-Project  creating and scheduling tasks .Using Queues for synchronisation.Target Embedded boards
 
 
 Target
 NXP Board
 
 Peripherals
-LED ,BUtton
+
+ADC
+Temperature Sensor
 
 
 Feature
-Button Signal generated LED Control
 
+ADC Configuration and Calibration
+Low Power Mode Functioning
 
 
 IMplementation
-Task oriented Functional implementation
-Improved efficiency by 30%  using synchronization resources.
-Less Latency.
+
+Improved efficiency by 30%  using timeout approach
+
