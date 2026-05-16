@@ -100,6 +100,9 @@ typedef struct lowPowerAdcBoundaries
  */
 static void ADC16_CalibrateParams(ADC_Type *base);
 
+static bool ADCInitHardwareTRigger(ADC_Type *ADC);
+static void ADC16PauseConversion(ADC_Type *Base);
+
 
 /*******************************************************************************
  * Variables
@@ -114,13 +117,74 @@ volatile bool conversionCompleted = false; /*! Conversion is completed Flag */
  ******************************************************************************/
 
 
+static void LPTMRInitTriggerADC(LPTMR_Type *base){
+	lptmr_config_t lptmrcfg;
 
+	LPTMR_GetDefaultConfig(&lptmrcfg);
+	LPTMR_Init(base, &lptmrcfg);
+
+	LPTMR_SetTimerPeriod(base, 500);
+	LPTMR_StartTimer(base);
+}
+void ADC16PauseConversion(ADC_Type *Base){
+
+	adc16_channel_config_t chnlcfg;
+	chnlcfg.channelNumber=31U;
+	chnlcfg.enableInterruptOnConversionCompleted=false;
+#if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) &&FSL_FEATURE_ADC16_HAS_DIFF_MODE
+	chnlcfg.enableDifferentialConversion=false;
+#endif
+	ADC16_SetChannelConfig(Base, 0, &chnlcfg);
+}
+
+
+
+static bool ADCInitHardwareTRigger(ADC_Type *ADC){
+#if (defined(FSL_FEATURE_ADC16_HAS_CALIBRATION)&& (FSL_FEATURE_ADC16_HAS_CALIBRATION))
+	uint32_t offsetval=0;
+	ADC16_DoAutoCalibration(ADC);
+	offsetval=ADC->OFS;
+	ADC16_SetOffsetValue(ADC, offsetval);
+#endif
+
+adc16_channel_config_t chnlcfg;
+adc16_config_t config;
+
+ADC16_GetDefaultConfig(&config);
+
+#if (defined(FSL_FEATURE_ADC16_MAX_RESOLUTION)) && (FSL_FEATURE_ADC16_MAX_RESOLUTION)
+
+config.resolution=kADC16_Resolution16Bit;
+
+#endif
+
+
+config.clockSource=kADC16_ClockSourceAlt0;
+config.enableContinuousConversion=false;
+config.enableHighSpeed=true;
+config.enableLowPower=true;
+#if (defined(BOARD_ADC_USE_ALT_VREF)&&BOARD_ADC_USE_ALT_VREF)
+config.referenceVoltageSource=kADC16_ReferenceVoltageSourceValt;
+#endif
+config.longSampleMode=kADC16_LongSampleCycle24;
+
+ADC16_EnableHardwareTrigger(ADC, 1);
+chnlcfg.channelNumber=26U;
+#if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE)&&(FSL_FEATURE_ADC16_HAS_DIFF_MODE)
+chnlcfg.enableDifferentialConversion=false;
+#endif
+chnlcfg.enableInterruptOnConversionCompleted=true;
+
+ADC16_SetChannelConfig(ADC, 0u, &chnlcfg);
+return true;
+}
 
 static void ADC16CalibratetParams(ADC_Type *ADC){
 
 	uint32_t pmcbandgappvalue=0;
 	adc16_channel_config_t chnlcfg;
 	adc16_config_t config;
+	uint32_t timeout=60000;
 
 
 	pmc_bandgap_buffer_config_t pmcbfrcfg;
@@ -168,10 +232,14 @@ while(! ADC16_GetChannelStatusFlags(ADC, 0U)&& timeout--)
 }
 
 pmcbandgappvalue=ADC16_GetChannelConversionValue(ADC, 0U);
-//ADC16_PauseConversion(ADC);
+ADC16_PauseConversion(ADC);
 
-//calculation formula
-
+//calculation formula/* Get VDD value measured in mV: VDD = (ADCR_VDD x V_BG) / ADCR_BG */
+vdd = ADCR_VDD * V_BG / pmcbandgappvalue;
+/* Calibrate ADCR_TEMP25: ADCR_TEMP25 = ADCR_VDD x V_TEMP25 / VDD */
+adcrTemp25 = ADCR_VDD * V_TEMP25 / vdd;
+/* ADCR_100M = ADCR_VDD x M x 100 / VDD */
+adcr100m = (ADCR_VDD * M) / (vdd * 10);
 pmcbfrcfg.enable=false;
 PMC_ConfigureBandgapBuffer(PMC, &pmcbfrcfg);
 }
@@ -200,5 +268,10 @@ int main(void)
     ADC16CalibratetParams(DEMO_ADC16_BASEADDR);
 
     /* Initialize Demo ADC */
+
+    if(!ADCInitHardwareTRigger(DEMO_ADC16_BASEADDR)){
+    	PRINTF("No ADC init happen");
+    	return -1;
+    }
 
 }
