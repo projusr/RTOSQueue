@@ -27,6 +27,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+//which and why input pin select is used for lptmr
 
 #include "fsl_debug_console.h"
 #include "fsl_smc.h"
@@ -125,6 +126,7 @@ static void LPTMRInitTriggerADC(LPTMR_Type *base){
 
 	LPTMR_SetTimerPeriod(base, 500);
 	LPTMR_StartTimer(base);
+	SIM->SOPT7 |= 0x0000008EU;
 }
 void ADC16PauseConversion(ADC_Type *Base){
 
@@ -273,5 +275,8 @@ int main(void)
     	PRINTF("No ADC init happen");
     	return -1;
     }
+    LPTMRInitTriggerADC(DEMO_ADC16_BASEADDR);
+    ADC16_EnableDMA(DEMO_ADC16_BASEADDR, false);
+    NVIC_EnableIRQ(DEMO_ADC16_IRQ_ID);
 
 }
