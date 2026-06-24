@@ -1,7 +1,6 @@
-
 # RTOS Project
 
-RTOS Queue
+IOT BAsed RTOS project
 
 
 
@@ -16,13 +15,17 @@ ADC
 Temperature Sensor
 
 
+
 Feature
 
 ADC Configuration and Calibration
 Low Power Mode Functioning
 
 
+
 IMplementation
 
-Improved efficiency by 30%  using timeout approach
+Design of Temperature based Acuisition system 
+
+Send data to Cloud
 
